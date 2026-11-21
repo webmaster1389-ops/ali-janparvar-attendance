@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#173b63">
+<title>سامانه حضور و غیاب | دبستان زنده‌یاد علی جان‌پرور</title>
+<style>
+:root{--navy:#173b63;--blue:#245b91;--bg:#f3f6fa;--line:#dce4ed;--text:#172536;--muted:#68788a;--white:#fff;--green:#18794e;--red:#b42318}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Tahoma,Arial,sans-serif;color:var(--text);line-height:1.7}
+header{background:linear-gradient(120deg,#173b63,#28669a);color:white;padding:22px 16px 26px}
+header .wrap,main{max-width:900px;margin:auto}header h1{font-size:20px;margin:0 0 4px}header p{margin:0;font-size:13px;opacity:.9}
+main{padding:16px}.card{background:white;border:1px solid var(--line);border-radius:16px;padding:16px;margin:0 0 14px;box-shadow:0 3px 14px #142b4410}
+h2{font-size:17px;margin:0 0 12px;color:var(--navy)}label{display:block;font-size:13px;font-weight:bold;margin:10px 0 5px}
+input,select,button{font:inherit}input,select{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;background:white;min-height:46px}
+button{border:0;border-radius:10px;padding:11px 16px;background:var(--blue);color:white;font-weight:bold;cursor:pointer;min-height:44px}
+button.secondary{background:#e8eef5;color:var(--navy)}button.danger{background:#a83232}
+button:disabled{opacity:.5;cursor:not-allowed}.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1;min-width:130px}
+.note{font-size:12px;color:var(--muted)}.status{padding:10px 12px;border-radius:10px;background:#edf4fb;color:var(--navy);font-size:13px;margin:10px 0;white-space:pre-wrap}
+.status.error{background:#fff0ef;color:var(--red)}.status.ok{background:#eaf7ef;color:var(--green)}
+.hidden{display:none!important}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#f5f8fc;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}.stat b{display:block;font-size:22px;color:var(--navy)}.stat span{font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 7px;border-bottom:1px solid var(--line);text-align:right}th{color:var(--muted);font-weight:bold}
+.pill{display:inline-block;padding:3px 9px;border-radius:20px;background:#eaf1f8;color:var(--navy);font-size:11px}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:12px 16px 28px}
+@media(max-width:520px){header h1{font-size:17px}.stats{grid-template-columns:1fr 1fr}.card{padding:13px}table{font-size:12px}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>دبستان زنده‌یاد علی جان‌پرور</h1>
+<p>سامانه ابری حضور و غیاب دانش‌آموزان · مدیریت: داود بی‌باک</p>
+</div></header>
+<main>
+<section id="loginCard" class="card">
+<h2>ورود به سامانه</h2>
+<p class="note">با ایمیل و رمز عبوری که در Firebase برای شما تعریف شده وارد شوید.</p>
+<label for="email">ایمیل</label><input id="email" type="email" autocomplete="username" placeholder="ایمیل حساب کاربری">
+<label for="password">رمز عبور</label><input id="password" type="password" autocomplete="current-password" placeholder="رمز عبور">
+<div class="row" style="margin-top:14px"><button id="loginBtn">ورود</button></div>
+<div id="loginMsg" class="status" role="status">برای ورود، اتصال اینترنت و دسترسی به سرویس Firebase لازم است.</div>
+</section>
+
+<section id="app" class="hidden">
+<div class="card">
+<div class="row" style="align-items:center"><div><h2 style="margin-bottom:2px">پنل مدیریت</h2><span id="who" class="note"></span></div><div style="text-align:left"><button id="logoutBtn" class="secondary">خروج</button></div></div>
+<div class="stats" style="margin-top:14px">
+<div class="stat"><b id="classCount">۰</b><span>کلاس ثبت‌شده</span></div>
+<div class="stat"><b id="studentCount">۰</b><span>دانش‌آموز ثبت‌شده</span></div>
+<div class="stat"><b>ابری</b><span>محل ذخیره‌سازی</span></div>
+</div>
+<div id="appMsg" class="status">در حال دریافت اطلاعات...</div>
+</div>
+
+<div class="card">
+<h2>کلاس‌ها</h2><div id="classesList" class="note">در حال بارگذاری...</div>
+</div>
+
+<div class="card">
+<h2>افزودن دانش‌آموز</h2>
+<p class="note">این بخش فعلاً برای مدیر فعال است. شناسه کلاس باید یکی از مقادیر ثبت‌شده باشد.</p>
+<label for="studentName">نام و نام خانوادگی</label><input id="studentName" placeholder="مثلاً: نام و نام خانوادگی">
+<label for="studentClass">کلاس</label><select id="studentClass"><option value="">انتخاب کلاس</option></select>
+<div class="row" style="margin-top:12px"><button id="addStudentBtn">ثبت دانش‌آموز</button></div>
+</div>
+
+<div class="card">
+<h2>فهرست دانش‌آموزان</h2>
+<label for="filterClass">نمایش کلاس</label><select id="filterClass"><option value="">همه کلاس‌ها</option></select>
+<div style="overflow-x:auto"><table><thead><tr><th>ردیف</th><th>نام دانش‌آموز</th><th>کلاس</th></tr></thead><tbody id="studentsBody"><tr><td colspan="3">هنوز اطلاعاتی بارگذاری نشده است.</td></tr></tbody></table></div>
+</div>
+
+<div class="card">
+<h2>مرحله بعدی سامانه</h2>
+<p class="note">ثبت حضور و غیاب، حساب‌های معلمان، محدودسازی هر معلم به کلاس خودش و گزارش‌های روزانه پس از تکمیل و آزمایش قوانین امنیتی فعال می‌شوند. تا آن زمان اطلاعات واقعی دانش‌آموزان را وارد نکنید.</p>
+</div>
+</section>
+</main>
+<footer>نسخه اولیه اتصال وب · اطلاعات فقط پس از ورود مجاز نمایش داده می‌شوند.</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+import { getFirestore, collection, getDocs, addDoc, doc, getDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDAB-PnveIEDTJy3KnWlJ2T8psP25z0VYk",
+  authDomain: "ali-janparvar-attendance.firebaseapp.com",
+  projectId: "ali-janparvar-attendance",
+  storageBucket: "ali-janparvar-attendance.firebasestorage.app",
+  messagingSenderId: "155475376803",
+  appId: "1:155475376803:web:2ce3499dce3eac51311d16",
+  measurementId: "G-SVYZN8JQQL"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const $ = id => document.getElementById(id);
+let classMap = {};
+
+function msg(id,text,type=""){const el=$(id);el.textContent=text;el.className="status "+type;}
+function faNum(n){return new Intl.NumberFormat("fa-IR").format(n);}
+function friendlyError(e){
+ const code=e?.code||"";
+ const map={
+ "auth/invalid-credential":"ایمیل یا رمز عبور درست نیست.",
+ "auth/too-many-requests":"تلاش‌های ورود زیاد بوده؛ کمی بعد دوباره امتحان کنید.",
+ "auth/network-request-failed":"اتصال اینترنت یا دسترسی به Firebase برقرار نیست.",
+ "permission-denied":"دسترسی پایگاه داده رد شد؛ قوانین امنیتی را بررسی کنید.",
+ "auth/unauthorized-domain":"دامنه این صفحه در تنظیمات Authorized domains ثبت نشده است."
+ };
+ return map[code]||("خطا: "+(e?.message||"مشکل نامشخص"));
+}
+$("loginBtn").onclick=async()=>{
+ $("loginBtn").disabled=true;msg("loginMsg","در حال ورود...");
+ try{await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value);}
+ catch(e){msg("loginMsg",friendlyError(e),"error");}
+ finally{$("loginBtn").disabled=false;}
+};
+$("logoutBtn").onclick=()=>signOut(auth);
+onAuthStateChanged(auth,async user=>{
+ if(!user){$("loginCard").classList.remove("hidden");$("app").classList.add("hidden");return;}
+ $("loginCard").classList.add("hidden");$("app").classList.remove("hidden");
+ $("who").textContent=user.email||"کاربر واردشده";
+ await loadAdminData(user);
+});
+async function loadAdminData(user){
+ msg("appMsg","در حال بررسی نقش کاربری...");
+ try{
+  const u=await getDoc(doc(db,"users",user.uid));
+  if(!u.exists()||u.data().role!=="admin"||u.data().active!==true){
+   await signOut(auth);$("loginCard").classList.remove("hidden");$("app").classList.add("hidden");
+   msg("loginMsg","این حساب در حال حاضر نقش مدیر فعال ندارد.","error");return;
+  }
+  await loadData();
+ }catch(e){msg("appMsg",friendlyError(e),"error");}
+}
+async function loadData(){
+ const cSnap=await getDocs(collection(db,"classes"));
+ classMap={}; cSnap.forEach(d=>classMap[d.id]=d.data().title||d.id);
+ $("classCount").textContent=faNum(cSnap.size);
+ const opts=Object.entries(classMap).map(([id,title])=>`<option value="${id}">${escapeHtml(title)}</option>`).join("");
+ $("studentClass").innerHTML='<option value="">انتخاب کلاس</option>'+opts;
+ $("filterClass").innerHTML='<option value="">همه کلاس‌ها</option>'+opts;
+ $("classesList").innerHTML=Object.entries(classMap).map(([id,title])=>`<div style="padding:7px 0;border-bottom:1px solid #e5eaf0"><b>${escapeHtml(title)}</b> <span class="pill">${escapeHtml(id)}</span></div>`).join("")||"کلاسی ثبت نشده است.";
+ await loadStudents();
+ msg("appMsg","اتصال برقرار است. ورود شما با نقش مدیر تأیید شد.","ok");
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+async function loadStudents(){
+ const snap=await getDocs(collection(db,"students"));let rows=[];
+ snap.forEach(d=>rows.push({id:d.id,...d.data()}));
+ $("studentCount").textContent=faNum(rows.length);
+ const filter=$("filterClass").value;
+ const visible=rows.filter(s=>!filter||s.classId===filter);
+ $("studentsBody").innerHTML=visible.length?visible.map((s,i)=>`<tr><td>${faNum(i+1)}</td><td>${escapeHtml(s.name||"—")}</td><td>${escapeHtml(classMap[s.classId]||s.classId||"—")}</td></tr>`).join(""):'<tr><td colspan="3">دانش‌آموزی برای این فیلتر ثبت نشده است.</td></tr>';
+}
+$("filterClass").onchange=()=>loadStudents().catch(e=>msg("appMsg",friendlyError(e),"error"));
+$("addStudentBtn").onclick=async()=>{
+ const name=$("studentName").value.trim(),classId=$("studentClass").value;
+ if(!name||!classId){msg("appMsg","نام دانش‌آموز و کلاس را انتخاب کنید.","error");return;}
+ $("addStudentBtn").disabled=true;
+ try{
+  await addDoc(collection(db,"students"),{name,classId,active:true,createdAt:new Date().toISOString()});
+  $("studentName").value="";await loadStudents();msg("appMsg","دانش‌آموز ثبت شد.","ok");
+ }catch(e){msg("appMsg",friendlyError(e),"error");}
+ finally{$("addStudentBtn").disabled=false;}
+};
+</script>
+</body>
+</html>
