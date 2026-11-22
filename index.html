@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>پنل مدیریت حضور و غیاب</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f6fb;color:#172334;font-family:Tahoma,Arial,sans-serif}
+.wrap{max-width:1100px;margin:auto;padding:14px}.top,.card{background:#fff;border:1px solid #e1e7f0;border-radius:16px;padding:16px;margin-bottom:14px}
+h1{font-size:21px;margin:0 0 8px}h2{font-size:17px;margin:0 0 14px}
+.muted{color:#65758b;font-size:13px;line-height:1.8}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{background:#f5f8ff;border-radius:12px;padding:13px}.stat b{font-size:22px;display:block;margin-top:7px}
+.tabs{display:flex;gap:7px;overflow:auto;margin-bottom:14px}.tab{width:auto;white-space:nowrap;background:#e8eef8;color:#26364c;padding:11px 14px}.tab.active{background:#155eef;color:white}
+input,select,button{font:inherit;border-radius:10px;padding:11px;border:1px solid #cbd5e1;max-width:100%}
+input,select{background:white;width:100%;margin:5px 0}button{background:#155eef;color:white;border:0;cursor:pointer;font-weight:bold;margin:4px 0}button.secondary{background:#eaf1ff;color:#174ea6}button.danger{background:#b42318}
+.row{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.actions{display:flex;gap:6px;flex-wrap:wrap}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 7px;border-bottom:1px solid #e7ecf3;text-align:right}th{background:#f7f9fc}
+.scroll{overflow:auto}.pill{display:inline-block;background:#eef3fb;padding:4px 8px;border-radius:20px;font-size:12px}
+.status{padding:10px;border-radius:10px;margin:8px 0;line-height:1.8}.ok{background:#e9f8ef;color:#176b36}.err{background:#fff0f0;color:#a32323}.warn{background:#fff8e6;color:#795500}
+.hidden{display:none}.student-row{display:grid;grid-template-columns:1fr 150px;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #edf0f5}
+.student-row select{margin:0}.smallbtn{padding:7px 10px;font-size:12px}
+@media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:1fr}.student-row{grid-template-columns:1fr 125px}h1{font-size:18px}}
+</style></head>
+<body><main class="wrap">
+<header class="top"><h1>پنل مدیریت حضور و غیاب</h1><div class="muted">دبستان زنده‌یاد علی جان‌پرور | مدیریت: داود بی‌باک</div></header>
+<section class="card" id="login">
+<h2>ورود مدیر</h2><input id="email" type="email" placeholder="ایمیل مدیر"><input id="password" type="password" placeholder="رمز عبور">
+<button id="loginBtn">ورود به پنل</button><div id="loginMsg" class="muted"></div>
+</section>
+<div id="panel" class="hidden">
+<section class="card">
+<div class="grid">
+<div class="stat">کل دانش‌آموزان<b id="totalCount">۰</b></div>
+<div class="stat">پایه پنجم<b id="c5">۰</b></div>
+<div class="stat">ششم الف<b id="c6a">۰</b></div>
+<div class="stat">ششم ب<b id="c6b">۰</b></div>
+</div>
+<div class="muted" id="lastUpdated">آمار از فضای ابری خوانده می‌شود.</div>
+</section>
+<nav class="tabs">
+<button class="tab active" data-tab="attendance">ثبت حضور و غیاب</button>
+<button class="tab" data-tab="students">مدیریت دانش‌آموزان</button>
+<button class="tab" data-tab="reports">گزارش‌ها</button>
+</nav>
+<section id="attendance" class="card">
+<h2>ثبت حضور و غیاب روزانه</h2>
+<div class="row"><div><label>تاریخ</label><input id="attDate" type="date"></div>
+<div><label>کلاس</label><select id="attClass"><option value="panjom">پایه پنجم</option><option value="sheshom-alef">پایه ششم الف</option><option value="sheshom-be">پایه ششم ب</option></select></div>
+<div><label>عملیات</label><button id="loadAtt">نمایش فهرست کلاس</button></div></div>
+<div id="attendanceList" class="muted">برای نمایش فهرست، کلاس و تاریخ را انتخاب کنید.</div>
+<div class="actions"><button id="allPresent" class="secondary">علامت‌گذاری همه به‌عنوان حاضر</button><button id="saveAtt">ذخیره حضور و غیاب</button></div>
+<div id="attMsg"></div>
+</section>
+<section id="students" class="card hidden">
+<h2>مدیریت دانش‌آموزان</h2>
+<div class="row"><input id="newName" placeholder="نام و نام خانوادگی دانش‌آموز"><select id="newClass"><option value="panjom">پایه پنجم</option><option value="sheshom-alef">پایه ششم الف</option><option value="sheshom-be">پایه ششم ب</option></select><button id="addStudent">افزودن دانش‌آموز</button></div>
+<input id="studentSearch" placeholder="جست‌وجوی نام دانش‌آموز">
+<div class="scroll"><table><thead><tr><th>نام دانش‌آموز</th><th>کلاس</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody id="studentRows"></tbody></table></div>
+<div id="studentMsg"></div>
+</section>
+<section id="reports" class="card hidden">
+<h2>گزارش حضور و غیاب</h2>
+<div class="row"><div><label>ماه گزارش</label><input id="reportMonth" type="month"></div><div><label>کلاس</label><select id="reportClass"><option value="all">همه کلاس‌ها</option><option value="panjom">پایه پنجم</option><option value="sheshom-alef">پایه ششم الف</option><option value="sheshom-be">پایه ششم ب</option></select></div><div><button id="makeReport">تهیه گزارش</button></div></div>
+<div id="reportSummary" class="muted">برای تهیه گزارش، ماه را انتخاب کنید.</div>
+<div class="scroll"><table><thead><tr><th>تاریخ</th><th>کلاس</th><th>حاضر</th><th>غایب</th><th>تأخیر</th><th>ثبت‌کننده</th></tr></thead><tbody id="reportRows"></tbody></table></div>
+</section>
+<section class="card"><div class="actions"><button class="secondary" id="refresh">به‌روزرسانی اطلاعات</button><button class="danger" id="logout">خروج از حساب</button></div><div class="muted">این نسخه فقط پنل مدیر دارد. پنل معلمان هنوز ساخته نشده است.</div></section>
+</div></main>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import {getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+import {getFirestore,doc,getDoc,collection,getDocs,addDoc,setDoc,updateDoc,deleteDoc,serverTimestamp,query,where} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyDAB-PnveIEDTJy3KnWlJ2T8psP25z0VYk",authDomain:"ali-janparvar-attendance.firebaseapp.com",projectId:"ali-janparvar-attendance",storageBucket:"ali-janparvar-attendance.firebasestorage.app",messagingSenderId:"155475376803",appId:"1:155475376803:web:2ce3499dce3eac51311d16",measurementId:"G-SVYZN8JQQL"};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const $=x=>document.getElementById(x);
+const classNames={"panjom":"پایه پنجم","sheshom-alef":"پایه ششم الف","sheshom-be":"پایه ششم ب"};
+let students=[],attendanceCache=[];
+const today=new Date();$("attDate").value=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;$("reportMonth").value=$("attDate").value.slice(0,7);
+function msg(id,t,kind="ok"){$(id).innerHTML=t?`<div class="status ${kind}">${t}</div>`:"";}
+function fa(n){return Number(n||0).toLocaleString("fa-IR")}
+function err(e){return e.code==="permission-denied"?"دسترسی رد شد؛ قوانین Firestore باید به‌روزرسانی شوند.":(e.message||"خطای نامشخص")}
+async function audit(action,details){await addDoc(collection(db,"auditLogs"),{action,details,by:auth.currentUser.uid,byEmail:auth.currentUser.email||"",createdAt:serverTimestamp()})}
+$("loginBtn").onclick=async()=>{try{$("loginBtn").disabled=true;$("loginMsg").textContent="در حال ورود...";await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value)}catch(e){$("loginMsg").textContent=err(e)}finally{$("loginBtn").disabled=false}};
+onAuthStateChanged(auth,async u=>{if(!u){$("login").classList.remove("hidden");$("panel").classList.add("hidden");return}
+try{const s=await getDoc(doc(db,"users",u.uid));if(!s.exists()||s.data().role!=="admin"||s.data().active!==true){await signOut(auth);$("loginMsg").textContent="این حساب مدیر فعال نیست.";return}
+$("login").classList.add("hidden");$("panel").classList.remove("hidden");await loadStudents()}catch(e){$("loginMsg").textContent=err(e);}});
+async function loadStudents(){const snap=await getDocs(collection(db,"students"));students=snap.docs.map(d=>({id:d.id,...d.data()}));renderStudents();const c={"panjom":0,"sheshom-alef":0,"sheshom-be":0};students.forEach(s=>{if(c[s.classId]!==undefined&&s.active!==false)c[s.classId]++});$("totalCount").textContent=fa(students.filter(s=>s.active!==false).length);$("c5").textContent=fa(c.panjom);$("c6a").textContent=fa(c["sheshom-alef"]);$("c6b").textContent=fa(c["sheshom-be"]);$("lastUpdated").textContent="آخرین دریافت اطلاعات: "+new Date().toLocaleString("fa-IR")}
+function renderStudents(){const q=$("studentSearch").value.trim().toLowerCase();$("studentRows").innerHTML="";students.filter(s=>(s.name||"").toLowerCase().includes(q)).forEach(s=>{const tr=document.createElement("tr");const name=document.createElement("td");name.textContent=s.name||"بدون نام";const cls=document.createElement("td");cls.textContent=classNames[s.classId]||s.classId||"نامشخص";const active=document.createElement("td");active.textContent=s.active===false?"غیرفعال":"فعال";const act=document.createElement("td");const edit=document.createElement("button");edit.className="smallbtn secondary";edit.textContent="ویرایش";edit.onclick=()=>editStudent(s);const del=document.createElement("button");del.className="smallbtn danger";del.textContent="حذف";del.onclick=()=>removeStudent(s);act.append(edit,del);tr.append(name,cls,active,act);$("studentRows").append(tr)})}
+$("studentSearch").oninput=renderStudents;
+async function editStudent(s){const n=prompt("نام دانش‌آموز:",s.name||"");if(n===null)return;const c=prompt("کد کلاس را وارد کنید: panjom / sheshom-alef / sheshom-be",s.classId||"panjom");if(c===null)return;if(!n.trim()||!classNames[c]){msg("studentMsg","نام یا کد کلاس معتبر نیست.","err");return}try{await updateDoc(doc(db,"students",s.id),{name:n.trim(),classId:c,className:classNames[c]});await audit("ویرایش دانش‌آموز",{studentId:s.id,name:n.trim(),classId:c});await loadStudents();msg("studentMsg","اطلاعات دانش‌آموز ویرایش شد.")}catch(e){msg("studentMsg",err(e),"err")}}
+async function removeStudent(s){if(!confirm(`دانش‌آموز «${s.name}» حذف شود؟`))return;try{await deleteDoc(doc(db,"students",s.id));await audit("حذف دانش‌آموز",{studentId:s.id,name:s.name});await loadStudents();msg("studentMsg","دانش‌آموز حذف شد.")}catch(e){msg("studentMsg",err(e),"err")}}
+$("addStudent").onclick=async()=>{const name=$("newName").value.trim(),classId=$("newClass").value;if(!name){msg("studentMsg","نام دانش‌آموز را وارد کنید.","err");return}try{const ref=await addDoc(collection(db,"students"),{name,classId,className:classNames[classId],active:true,createdAt:serverTimestamp()});await audit("افزودن دانش‌آموز",{studentId:ref.id,name,classId});$("newName").value="";await loadStudents();msg("studentMsg","دانش‌آموز افزوده شد.")}catch(e){msg("studentMsg",err(e),"err")}};
+function statusLabel(s){return s==="present"?"حاضر":s==="absent"?"غایب":s==="late"?"تأخیر":"ثبت نشده"}
+async function loadAttendance(){const cid=$("attClass").value,date=$("attDate").value;if(!date)return;const list=students.filter(s=>s.classId===cid&&s.active!==false);let saved={};try{const snap=await getDoc(doc(db,"attendance",`${cid}_${date}`));if(snap.exists())saved=snap.data().records||{}}catch(e){msg("attMsg",err(e),"err");return}
+const box=$("attendanceList");box.innerHTML="";if(!list.length){box.textContent="برای این کلاس دانش‌آموز فعالی ثبت نشده است.";return}
+list.forEach(s=>{const row=document.createElement("div");row.className="student-row";const label=document.createElement("div");label.textContent=s.name;const sel=document.createElement("select");sel.dataset.id=s.id;[["present","حاضر"],["absent","غایب"],["late","تأخیر"]].forEach(([v,t])=>{const o=document.createElement("option");o.value=v;o.textContent=t;sel.append(o)});sel.value=saved[s.id]||"present";row.append(label,sel);box.append(row)})}
+$("loadAtt").onclick=loadAttendance;
+$("allPresent").onclick=()=>document.querySelectorAll("#attendanceList select").forEach(s=>s.value="present");
+$("saveAtt").onclick=async()=>{const cid=$("attClass").value,date=$("attDate").value,selects=[...document.querySelectorAll("#attendanceList select")];if(!selects.length){msg("attMsg","ابتدا فهرست کلاس را نمایش دهید.","err");return}const records={};selects.forEach(s=>records[s.dataset.id]=s.value);try{await setDoc(doc(db,"attendance",`${cid}_${date}`),{classId:cid,className:classNames[cid],date,records,studentCount:selects.length,updatedAt:serverTimestamp(),updatedBy:auth.currentUser.uid},{merge:true});await audit("ثبت یا اصلاح حضور و غیاب",{classId:cid,date,studentCount:selects.length});msg("attMsg","حضور و غیاب در فضای ابری ذخیره شد.")}catch(e){msg("attMsg",err(e),"err")}};
+async function makeReport(){const month=$("reportMonth").value,cid=$("reportClass").value;if(!month){msg("reportSummary","ماه را انتخاب کنید.","err");return}try{const snap=await getDocs(collection(db,"attendance"));const rows=snap.docs.map(d=>d.data()).filter(x=>(x.date||"").startsWith(month)&&(cid==="all"||x.classId===cid)).sort((a,b)=>a.date.localeCompare(b.date));$("reportRows").innerHTML="";let totals={present:0,absent:0,late:0};rows.forEach(r=>{const counts={present:0,absent:0,late:0};Object.values(r.records||{}).forEach(v=>{if(counts[v]!==undefined){counts[v]++;totals[v]++}});const tr=document.createElement("tr");[r.date,classNames[r.classId]||r.classId,fa(counts.present),fa(counts.absent),fa(counts.late),r.updatedBy||"مدیر"].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.append(td)});$("reportRows").append(tr)});$("reportSummary").textContent=`تعداد روز/کلاس‌های ثبت‌شده: ${fa(rows.length)} | حاضر: ${fa(totals.present)} | غایب: ${fa(totals.absent)} | تأخیر: ${fa(totals.late)}`}catch(e){msg("reportSummary",err(e),"err")}}
+$("makeReport").onclick=makeReport;
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===b));["attendance","students","reports"].forEach(id=>$(id).classList.toggle("hidden",id!==b.dataset.tab))});
+$("refresh").onclick=async()=>{await loadStudents();msg("studentMsg","اطلاعات به‌روزرسانی شد.")};$("logout").onclick=()=>signOut(auth);
+</script></body></html>
