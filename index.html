@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سامانه حضور و غیاب دبستان زنده‌یاد علی جان‌پرور</title>
+<style>
+:root{font-family:Tahoma,Arial,sans-serif;color:#182230;background:#f3f6fb}
+*{box-sizing:border-box}body{margin:0;padding:16px}
+main{max-width:850px;margin:auto}
+header,.panel{background:white;border:1px solid #e3e9f2;border-radius:16px;padding:18px;margin-bottom:14px}
+h1{font-size:21px;margin:0 0 8px}h2{font-size:18px;margin:0 0 12px}
+p{line-height:1.9;color:#526174}
+input,button{font:inherit;border-radius:10px;padding:12px;width:100%;margin:6px 0;border:1px solid #cbd5e1}
+button{background:#155eef;color:white;border:0;font-weight:bold;cursor:pointer}
+button.secondary{background:#eaf1ff;color:#174ea6}
+button:disabled{opacity:.5}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:#f5f8ff;padding:12px;border-radius:12px}
+.small{font-size:13px;color:#667085}
+#app{display:none}.notice{padding:12px;border-radius:10px;background:#fff8e6;color:#795500;line-height:1.8}
+.success{background:#eaf8ef;color:#176b36}.error{background:#fff0f0;color:#a32323}
+ul{line-height:2}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>سامانه حضور و غیاب</h1>
+<p>دبستان زنده‌یاد علی جان‌پرور<br>مدیریت: داود بی‌باک</p>
+</header>
+
+<section class="panel" id="login">
+<h2>ورود مدیر</h2>
+<input id="email" type="email" placeholder="ایمیل مدیر" autocomplete="username">
+<input id="password" type="password" placeholder="رمز عبور" autocomplete="current-password">
+<button id="loginBtn">ورود</button>
+<div id="loginMsg" class="small" aria-live="polite"></div>
+</section>
+
+<section id="app">
+<section class="panel">
+<h2>وضعیت فهرست دانش‌آموزان</h2>
+<div class="grid">
+<div class="stat"><strong>پایه پنجم</strong><div>۳۴ نفر</div></div>
+<div class="stat"><strong>پایه ششم الف</strong><div>۲۵ نفر</div></div>
+<div class="stat"><strong>پایه ششم ب</strong><div>۲۷ نفر</div></div>
+<div class="stat"><strong>مجموع</strong><div>۸۶ نفر</div></div>
+</div>
+<p class="notice">این ابزار فقط فهرست اولیه دانش‌آموزان را در Firestore ثبت می‌کند. هنوز بخش ثبت حضور و غیاب و پنل معلمان فعال نشده است.</p>
+<button id="importBtn">ثبت یک‌جای ۸۶ دانش‌آموز در فضای ابری</button>
+<div id="importMsg" aria-live="polite"></div>
+</section>
+<section class="panel">
+<h2>دانش‌آموزان ثبت‌شده</h2>
+<div id="studentList" class="small">در حال دریافت فهرست...</div>
+<button class="secondary" id="refreshBtn">به‌روزرسانی فهرست</button>
+<button class="secondary" id="logoutBtn">خروج از حساب</button>
+</section>
+</section>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, collection, getDocs, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDAB-PnveIEDTJy3KnWlJ2T8psP25z0VYk",
+  authDomain: "ali-janparvar-attendance.firebaseapp.com",
+  projectId: "ali-janparvar-attendance",
+  storageBucket: "ali-janparvar-attendance.firebasestorage.app",
+  messagingSenderId: "155475376803",
+  appId: "1:155475376803:web:2ce3499dce3eac51311d16",
+  measurementId: "G-SVYZN8JQQL"
+};
+
+const roster = [
+{classId:"panjom",className:"پایه پنجم",names:[
+"امیرحمزه اربابی","عمادالدین اسکانی","عبدالسلام اسلام‌نژاد","اسامه برم","محمدعلی برم","علی‌رضا بکند","محمود بلده","احسان بون","سدیس بون","عذیر بون","یوسف بون","مقداد بیجاد","معراج پر","عبدالرحمان پرمو","یوسف پرهاره","محمد پیرای","عباس پیرای","داوود تیرکان","ابراهیم تیرکان","عثمان تیرکان","عرفان تیرکان","عثمان دادَرنگ","مرتضی درزاده","یحیی درزاده","محمدطاها درزاده زئی","زید درزمان","سعید درزمان","محمدامین درزمان","مسعود درزمان","سعدی کریمی‌نژاد","محمدعمر لله‌زائی","روز طلحه محمدحسنی","دانیال نبوده","عمر نوکری"]},
+{classId:"sheshom-alef",className:"پایه ششم الف",names:[
+"امیرحسین اسکانی","امیرمحمد اسکانی","عبدالرحمان پرصفائی","محمدادیب پرصفائی","محمدمصطفی پرهاره","ابوبکر پرهیخته","بنیامین تیرکان","عبدالله حق‌شناس","محمود دانشور","مسعود دانشور","محمد درزاده","مهدی درزاده","حبیب درزاده مقدم","محمدعمر درزاده ناز","محمدطاها درزمان","مرتضی درزیان","فیصل درنان","سعید رئیسی","عمر زرنما","پارسا شمس اسکانی","امیرعلی کیان‌منش","روز زاهد محمدحسنی","محمد مقدری","امیرحسین میرصَفائی","زبیر هوت"]},
+{classId:"sheshom-be",className:"پایه ششم ب",names:[
+"سلمان آسکانی","عثمان آسکانی","محمد آسکانی (فرزند عبدالرؤوف)","معاذ آسکانی","یاسین آسکانی","یحیی آسکانی","محمدطاها آسکانی آزاد","شعیب آسکانی فرد","حسان اربابی","سامر آسکانی","محمد آسکانی (فرزند محمد یونس)","محمد آسکانی (فرزند عالم)","محمدسلیم آسکانی","مهران آسکانی","یحیی آسکانی","حسام براه","بنیامین برصفائی","عارف بلوچ","امیر بلوچی","ابوالقاسم بون","حمزه بون","محمد بون","محمدزکریا بون","عبدالغفور بیجاد","ادیب تیرکان","محمدامین حق‌شناس","محمدطاها دادَرنگ"]}
+];
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const $ = id => document.getElementById(id);
+const show = (id,msg,cls="") => { const el=$(id); el.className=cls; el.textContent=msg; };
+
+$("loginBtn").addEventListener("click", async()=>{
+  $("loginBtn").disabled=true; show("loginMsg","در حال ورود...");
+  try { await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value); }
+  catch(e){ show("loginMsg","ورود انجام نشد: "+friendly(e),"error"); }
+  finally{$("loginBtn").disabled=false;}
+});
+
+function friendly(e){
+  const map={"auth/invalid-credential":"ایمیل یا رمز عبور اشتباه است.","auth/too-many-requests":"تعداد تلاش‌ها زیاد بوده؛ کمی بعد دوباره امتحان کنید.","permission-denied":"دسترسی Firestore رد شد؛ قوانین پایگاه داده را بررسی کنید."};
+  return map[e.code] || e.message || "خطای نامشخص";
+}
+
+onAuthStateChanged(auth,async user=>{
+  if(!user){$("login").style.display="block";$("app").style.display="none";return;}
+  try{
+    const snap=await getDoc(doc(db,"users",user.uid));
+    if(!snap.exists() || snap.data().role!=="admin" || snap.data().active!==true){
+      await signOut(auth); show("loginMsg","این حساب نقش مدیر فعال ندارد. فیلدهای role=admin و active از نوع Boolean و مقدار true را بررسی کنید.","error"); return;
+    }
+    $("login").style.display="none";$("app").style.display="block"; await refreshStudents();
+  }catch(e){await signOut(auth);show("loginMsg","بررسی حساب مدیر ناموفق بود: "+friendly(e),"error");}
+});
+
+async function refreshStudents(){
+  try{
+    const snap=await getDocs(collection(db,"students"));
+    if(!snap.size){$("studentList").textContent="هنوز دانش‌آموزی ثبت نشده است.";return;}
+    const counts={"panjom":0,"sheshom-alef":0,"sheshom-be":0};
+    snap.forEach(d=>{const c=d.data().classId;if(counts[c]!==undefined)counts[c]++;});
+    $("studentList").innerHTML=`مجموع ثبت‌شده: ${snap.size} نفر<br>پنجم: ${counts.panjom} نفر | ششم الف: ${counts["sheshom-alef"]} نفر | ششم ب: ${counts["sheshom-be"]} نفر`;
+  }catch(e){$("studentList").textContent="خطا در دریافت فهرست: "+friendly(e);}
+}
+$("refreshBtn").addEventListener("click",refreshStudents);
+$("logoutBtn").addEventListener("click",()=>signOut(auth));
+
+$("importBtn").addEventListener("click",async()=>{
+  const btn=$("importBtn"); btn.disabled=true;
+  show("importMsg","در حال بررسی و ثبت فهرست‌ها... لطفاً صفحه را نبندید.");
+  try{
+    const existing=await getDocs(collection(db,"students"));
+    if(existing.size>0){
+      show("importMsg",`در حال حاضر ${existing.size} دانش‌آموز در مجموعه students وجود دارد. برای جلوگیری از ثبت تکراری، ورود یک‌جای اولیه متوقف شد. ابتدا فهرست موجود را بررسی کنید.`,"notice");
+      return;
+    }
+    const batch=writeBatch(db);
+    let total=0;
+    for(const group of roster){
+      group.names.forEach((name,index)=>{
+        const id=`${group.classId}-${String(index+1).padStart(3,"0")}`;
+        batch.set(doc(db,"students",id),{
+          name, classId:group.classId, className:group.className,
+          active:true, createdAt:serverTimestamp()
+        });
+        total++;
+      });
+    }
+    await batch.commit();
+    show("importMsg",`ثبت موفق بود: ${total} دانش‌آموز در سه کلاس ثبت شدند.`,"success");
+    await refreshStudents();
+  }catch(e){show("importMsg","ثبت انجام نشد: "+friendly(e),"error");}
+  finally{btn.disabled=false;}
+});
+</script>
+</body>
+</html>
